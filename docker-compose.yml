@@ -6,16 +6,19 @@ services:
       - .env
     environment:
       HOST: 0.0.0.0
-      PORT: ${PORT:-8080}
+      # CloudDabba expects a fixed container port from docker-compose.
+      # Keep the application on 8080; the platform proxy maps its public port to this container port.
+      PORT: 8080
       MODEL_DIR: ${MODEL_DIR:-/models}
       DOWNLOAD_MODEL: ${DOWNLOAD_MODEL:-true}
+      ENABLE_WEBUI: ${ENABLE_WEBUI:-true}
     ports:
-      - "${PORT:-8080}:${PORT:-8080}"
+      - "8080:8080"
     volumes:
       - ./models:/models
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "PORT=$${PORT:-8080} /app/scripts/healthcheck.sh"]
+      test: ["CMD-SHELL", "PORT=8080 /app/scripts/healthcheck.sh"]
       interval: 30s
       timeout: 10s
       retries: 10

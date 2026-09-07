@@ -22,6 +22,7 @@ set -Eeuo pipefail
 : "${CORS_ORIGINS:=}"
 : "${LLAMA_SERVER_BIN:=}"
 : "${LLAMA_SERVER_ARGS:=}"
+: "${ENABLE_WEBUI:=true}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -46,7 +47,6 @@ if [[ ! -f "${MODEL_PATH}" ]]; then
 fi
 
 # Resolve llama-server across the official llama.cpp container layouts.
-# Prefer an explicitly configured binary, then PATH, then common image paths.
 if [[ -n "${LLAMA_SERVER_BIN}" ]]; then
   if [[ ! -x "${LLAMA_SERVER_BIN}" ]] && ! command -v "${LLAMA_SERVER_BIN}" >/dev/null 2>&1; then
     echo "ERROR: LLAMA_SERVER_BIN='${LLAMA_SERVER_BIN}' was not found or is not executable." >&2
@@ -62,8 +62,6 @@ elif [[ -x /usr/bin/llama-server ]]; then
   LLAMA_SERVER_BIN=/usr/bin/llama-server
 else
   echo "ERROR: llama-server executable not found." >&2
-  echo "Checked PATH, /app/llama-server, /usr/local/bin/llama-server, and /usr/bin/llama-server." >&2
-  echo "Set LLAMA_SERVER_BIN to the executable path if your llama.cpp image uses another location." >&2
   exit 127
 fi
 
@@ -84,9 +82,12 @@ args=(
   --batch-size "${BATCH_SIZE}"
   --ubatch-size "${UBATCH_SIZE}"
   --parallel "${PARALLEL}"
-  --no-webui
   --log-verbosity "${LOG_VERBOSITY}"
 )
+
+if [[ "${ENABLE_WEBUI}" != "true" ]]; then
+  args+=(--no-webui)
+fi
 
 if [[ -n "${MODEL_ALIAS}" ]]; then
   args+=(--alias "${MODEL_ALIAS}")
